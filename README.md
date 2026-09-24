@@ -1,4 +1,4 @@
-# Project: Real-Time Flappy Bird Clone
+# Real-Time Flappy Bird Clone
 
 This project is a terminal-based Flappy Bird clone using **Pygame**. It introduces students to interactive game design using object-oriented principles and real-time graphical rendering.
 
