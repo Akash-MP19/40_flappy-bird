@@ -23,3 +23,8 @@ class Pipe:
     def bottom_rect(self):
         bottom_y = self.gap_y + self.gap
         return pygame.Rect(self.x, bottom_y, self.width, self.screen_height - bottom_y)
+
+    def collides_with(self, bird):
+        bird_rect = bird.rect()
+        return self.top_rect().colliderect(bird_rect) or self.bottom_rect().colliderect(bird_rect)
+
