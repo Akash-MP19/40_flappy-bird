@@ -7,24 +7,49 @@ from .pipe import Pipe
 WHITE = (255, 255, 255)
 GREEN = (0, 150, 0)
 
+DIFFICULTIES = {
+    "easy": {"speed": 3, "gap": 180, "interval": 100},
+    "medium": {"speed": 4, "gap": 150, "interval": 90},
+    "hard": {"speed": 6, "gap": 120, "interval": 75},
+}
+
 class GameEngine:
     def __init__(self, width, height):
         self.width = width
         self.height = height
 
-        self.bird = Bird(width // 4, height // 2)
-        self.pipe_speed = 4
-        self.pipe_interval = 90  # frames between pipe spawns
-        self._spawn_timer = 0
-        self.pipes = [Pipe(width + 100, height, speed=self.pipe_speed)]
-
-        self.score = 0
         self.font = pygame.font.SysFont("Arial", 30)
         self.game_over_font = pygame.font.SysFont("Arial", 50, bold=True)
+        self.menu_title_font = pygame.font.SysFont("Arial", 24, bold=True)
+        self.menu_font = pygame.font.SysFont("Arial", 22)
+
+        self.reset_game("medium")
+
+    def reset_game(self, difficulty="medium"):
+        self.difficulty = difficulty
+        settings = DIFFICULTIES.get(difficulty, DIFFICULTIES["medium"])
+        self.pipe_speed = settings["speed"]
+        self.pipe_gap = settings["gap"]
+        self.pipe_interval = settings["interval"]
+
+        self.bird = Bird(self.width // 4, self.height // 2)
+        self._spawn_timer = 0
+        self.pipes = [Pipe(self.width + 100, self.height, gap=self.pipe_gap, speed=self.pipe_speed)]
+
+        self.score = 0
         self.game_over = False
 
     def handle_event(self, event):
         if self.game_over:
+            if event.type == pygame.KEYDOWN:
+                if event.key in (pygame.K_1, pygame.K_KP1, pygame.K_e):
+                    self.reset_game("easy")
+                elif event.key in (pygame.K_2, pygame.K_KP2, pygame.K_m):
+                    self.reset_game("medium")
+                elif event.key in (pygame.K_3, pygame.K_KP3, pygame.K_h):
+                    self.reset_game("hard")
+                elif event.key in (pygame.K_4, pygame.K_KP4, pygame.K_q, pygame.K_ESCAPE):
+                    pygame.event.post(pygame.event.Event(pygame.QUIT))
             return
 
         # Flap is edge-triggered (KEYDOWN / MOUSEBUTTONDOWN), not held.
@@ -59,7 +84,7 @@ class GameEngine:
         self._spawn_timer += 1
         if self._spawn_timer >= self.pipe_interval:
             self._spawn_timer = 0
-            self.pipes.append(Pipe(self.width, self.height, speed=self.pipe_speed))
+            self.pipes.append(Pipe(self.width, self.height, gap=self.pipe_gap, speed=self.pipe_speed))
 
         for pipe in self.pipes:
             pipe.move()
@@ -88,16 +113,35 @@ class GameEngine:
         if self.game_over:
             # Semi-transparent overlay to dim the scene
             overlay = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
-            overlay.fill((0, 0, 0, 128))
+            overlay.fill((0, 0, 0, 150))
             screen.blit(overlay, (0, 0))
 
             # "GAME OVER" message
             game_over_surf = self.game_over_font.render("GAME OVER", True, (255, 60, 60))
-            game_over_rect = game_over_surf.get_rect(center=(self.width // 2, self.height // 2 - 40))
+            game_over_rect = game_over_surf.get_rect(center=(self.width // 2, 170))
             screen.blit(game_over_surf, game_over_rect)
 
             # Final score message
             final_score_surf = self.font.render(f"Final Score: {self.score}", True, WHITE)
-            final_score_rect = final_score_surf.get_rect(center=(self.width // 2, self.height // 2 + 20))
+            final_score_rect = final_score_surf.get_rect(center=(self.width // 2, 230))
             screen.blit(final_score_surf, final_score_rect)
+
+            # Replay Menu Title
+            menu_title_surf = self.menu_title_font.render("Select Difficulty to Replay:", True, (255, 215, 0))
+            menu_title_rect = menu_title_surf.get_rect(center=(self.width // 2, 310))
+            screen.blit(menu_title_surf, menu_title_rect)
+
+            # Menu Options
+            options = [
+                ("[1] Easy    (Speed 3, Gap 180)", (100, 255, 100), 365),
+                ("[2] Medium  (Speed 4, Gap 150)", (255, 255, 255), 415),
+                ("[3] Hard    (Speed 6, Gap 120)", (255, 120, 120), 465),
+                ("[4] Exit    (Press 4 or ESC)", (180, 180, 180), 525),
+            ]
+
+            for text, color, y_pos in options:
+                opt_surf = self.menu_font.render(text, True, color)
+                opt_rect = opt_surf.get_rect(center=(self.width // 2, y_pos))
+                screen.blit(opt_surf, opt_rect)
+
 
